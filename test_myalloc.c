@@ -154,6 +154,6 @@ int main(void)
     // add_value_test();
     // time_test();
     // out_of_tab_test();
-     random_test();
+    // random_test();
     return 0;
 }

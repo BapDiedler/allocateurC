@@ -11,9 +11,13 @@ void init_memory(void)
         ERROR;
         exit(1);
     }
+    large_block_t* tmp = (large_block_t*)big_free;
+    tmp->head = 0;
+    tmp->size = SIZE_FIRST_BLK_LARGE - 2*sizeof(size_t);
     for(int i=0; i<MAX_SMALL-1; i++)
     {
         small_tab[i].head = (size_t)&small_tab[i+1];
+        small_tab[i].size = SIZE_BLK_SMALL;
     }
     small_free = (size_t)small_tab;
     small_tab[MAX_SMALL-1].head = 0;
