@@ -13,15 +13,13 @@ void my_alloc_test(void)
     char* valid_tab2 = (char*)my_alloc(0);
     char* valid_tab3 = (char*)my_alloc(57);
 
-    printf("%p\n",valid_tab2);
-
     valid_tab1 != NULL ? VALID : ERROR;
     valid_tab2 != NULL ? VALID : ERROR;
     valid_tab3 != NULL ? VALID : ERROR;
 
-    ptr_head(valid_tab1)->head == ALLOC_BLOCK ? VALID : ERROR;
-    ptr_head(valid_tab2)->head == ALLOC_BLOCK ? VALID : ERROR;
-    ptr_head(valid_tab3)->head == ALLOC_BLOCK ? VALID : ERROR;
+    (size_t)ptr_head(valid_tab1)->head %2 == 1 ? VALID : ERROR;
+    (size_t)ptr_head(valid_tab2)->head %2 == 1 ? VALID : ERROR;
+    (size_t)ptr_head(valid_tab3)->head %2 == 1 ? VALID : ERROR;
 
     error_tab1 == NULL ? VALID : ERROR;
     error_tab2 == NULL ? VALID : ERROR;
@@ -37,12 +35,11 @@ void my_alloc_test(void)
 
 void free_test(void)
 {
-    printf("%p\n",(void*)ALLOC_BLOCK);
     init_memory();
     print_memory();
     char* tab = (char*)my_alloc(57);
 
-    ptr_head(tab)->head == ALLOC_BLOCK ? VALID : ERROR;
+    ptr_head(tab)->head % 2 == 1 ? VALID : ERROR;
 
     print_memory();
 
@@ -50,7 +47,7 @@ void free_test(void)
 
     print_memory();
 
-    ptr_head(tab)->head != ALLOC_BLOCK && head() == ptr_head(tab) ? VALID : ERROR;
+    ptr_head(tab)->head % 2 == 0 && head() == ptr_head(tab) ? VALID : ERROR;
 
     char* error_tab1 = (char*)my_alloc(200);
     my_free(error_tab1);
@@ -120,6 +117,7 @@ void out_of_tab_test()
 
 void random_test(void)
 {
+    init_memory();
     srand(time(NULL));
     
     int size_index = rand() % SIZE_BLK_SMALL;
@@ -156,6 +154,6 @@ int main(void)
     // add_value_test();
     // time_test();
     // out_of_tab_test();
-    // random_test();
+     random_test();
     return 0;
 }

@@ -6,16 +6,18 @@
 
 #define MAX_SMALL 5                                 // taille maximale du petit tableau
 #define SIZE_BLK_SMALL (128 - sizeof(size_t))       // taille d'un bloc sans l'entête
-#define ALLOC_BLOCK (small_tab - sizeof(block_t))   // adresse vers laquel les blocs alloués pointent
+#define ALLOC_BLOCK (small_tab - sizeof(block_t))   // adresse vers laquel les blocs alloués pointent.
 
-typedef struct block_s // structure d'un bloc (entête + corps)
+typedef struct block_s block_t;
+struct block_s // structure d'un bloc (entête + corps)
 {
-    block_t * head;                     // pointeur vers le prochain bloc libre ou vers ALLOC_BLOCK
+    size_t head;                        // pointeur vers le prochain bloc libre
+    size_t size;                        // taille du bloc en nombre d'octet
     __uint8_t body[SIZE_BLK_SMALL];     // corps de la mémoire du bloc
-} block_t;
+};
 
 block_t small_tab[MAX_SMALL];   // tableau de bloc (char small_tab[MAX_SMALL * 128] est une autre otpion que avec la structure)
-block_t* list_block;            // pointeur vers le premier bloc libre
+size_t list_block;            // pointeur vers le premier bloc libre
 
 /**
  * @brief allocation de mémoire de taille size

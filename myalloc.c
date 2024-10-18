@@ -2,11 +2,11 @@
 
 void* my_alloc(size_t size)
 {
-    if(size <= SIZE_BLK_SMALL && list_block != NULL)
+    if(size <= SIZE_BLK_SMALL && list_block != 0)
     {
-        block_t* tmp = list_block;
+        block_t* tmp = (block_t*)list_block;
         next();
-        tmp->head = ALLOC_BLOCK;
+        tmp->head = (tmp->head)+1;
         return tmp->body;
     }
     return NULL;
@@ -28,8 +28,8 @@ void my_free(void* ptr)
         printf("The pointer is in an empty block.\n");
     }else
     {
-        ptr_head(ptr)->head = list_block;
-        list_block = ptr_head(ptr);
+        ptr_head(ptr)->head = (size_t)list_block;
+        list_block = (size_t)ptr_head(ptr);
     }
 }
 
@@ -64,27 +64,29 @@ void print_memory(void)
 
 void init_memory(void)
 {
+    assert(sizeof(block_t)%sizeof(size_t) == 0 && sizeof(block_t)> SIZE_BLK_SMALL);
     for(int i=0; i<MAX_SMALL-1; i++)
     {
-        small_tab[i].head = &small_tab[i+1];
+        small_tab[i].head = (size_t)&small_tab[i+1];
     }
-    list_block = small_tab;
-    small_tab[MAX_SMALL-1].head = NULL;
+    list_block = (size_t)small_tab;
+    small_tab[MAX_SMALL-1].head = 0;
 }
 
 block_t* head(void)
 {
-    return list_block;
+    return (block_t*)list_block;
 }
 
 void next(void)
 {
-    list_block = list_block->head;
+    block_t* tmp = (block_t*)list_block;
+    list_block = (size_t)tmp->head;
 }
 
 int is_free(void* ptr)
 {
-    return ptr_head(ptr)->head != ALLOC_BLOCK;
+    return ((size_t)(ptr_head(ptr)->head) % 2 ) == 0;
 }
 
 block_t* ptr_head(void* ptr)
