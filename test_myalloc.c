@@ -138,7 +138,7 @@ void random_test(void)
     char* tab_realloc = my_realloc(tab, new_size);
     for(int i=0; i<new_size; i++)
     {
-        printf("%d | ",tab_realloc[i]);
+        printf("%d | ",tab_realloc[i]);fflush(stdout);
     }
     printf("\n\n");
 }

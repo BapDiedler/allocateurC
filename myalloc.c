@@ -1,10 +1,50 @@
 #include "myalloc.h"
 
+void init_memory(void)
+{
+    // if(!(sizeof(block_t)%sizeof(size_t) == 0 && sizeof(block_t)> SIZE_BLK_SMALL))
+    // {
+
+    // }
+    if((big_free = (size_t)sbrk(SIZE_FIRST_BLK_LARGE)) == (size_t)-1)
+    {
+        ERROR;
+        exit(1);
+    }
+    for(int i=0; i<MAX_SMALL-1; i++)
+    {
+        small_tab[i].head = (size_t)&small_tab[i+1];
+    }
+    small_free = (size_t)small_tab;
+    small_tab[MAX_SMALL-1].head = 0;
+}
+
 void* my_alloc(size_t size)
 {
-    if(size <= SIZE_BLK_SMALL && list_block != 0)
+    if(size > SIZE_BLK_SMALL)
     {
-        block_t* tmp = (block_t*)list_block;
+        if(big_free == 0)
+        {
+            return sbrk(size+2*sizeof(size_t));
+        }else{
+            block_t* tmp = (block_t*)big_free;
+            if(tmp->size < size + 2*sizeof(size_t) + SIZE_BLK_SMALL)
+            {
+                big_free = tmp->head;
+                tmp->head += 1;
+                return tmp->body;
+            }else
+            {
+                size_t k = tmp->size - (size + 2*sizeof(size_t));
+                k = k - (k%sizeof(size_t));
+                
+            }
+        }
+        //cherche big free. Block de taille au moins size+2*sizeof(soze_t)
+    }
+    if(size <= SIZE_BLK_SMALL && small_free != 0)
+    {
+        block_t* tmp = (block_t*)small_free;
         next();
         tmp->head = (tmp->head)+1;
         return tmp->body;
@@ -28,8 +68,8 @@ void my_free(void* ptr)
         printf("The pointer is in an empty block.\n");
     }else
     {
-        ptr_head(ptr)->head = (size_t)list_block;
-        list_block = (size_t)ptr_head(ptr);
+        ptr_head(ptr)->head = (size_t)small_free;
+        small_free = (size_t)ptr_head(ptr);
     }
 }
 
@@ -62,26 +102,15 @@ void print_memory(void)
     printf("END OF PRINT !!!!!\n");
 }
 
-void init_memory(void)
-{
-    assert(sizeof(block_t)%sizeof(size_t) == 0 && sizeof(block_t)> SIZE_BLK_SMALL);
-    for(int i=0; i<MAX_SMALL-1; i++)
-    {
-        small_tab[i].head = (size_t)&small_tab[i+1];
-    }
-    list_block = (size_t)small_tab;
-    small_tab[MAX_SMALL-1].head = 0;
-}
-
 block_t* head(void)
 {
-    return (block_t*)list_block;
+    return (block_t*)small_free;
 }
 
 void next(void)
 {
-    block_t* tmp = (block_t*)list_block;
-    list_block = (size_t)tmp->head;
+    block_t* tmp = (block_t*)small_free;
+    small_free = (size_t)tmp->head;
 }
 
 int is_free(void* ptr)

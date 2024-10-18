@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <assert.h>
 
 #define VALID printf("valid\n"), fflush(stdout)
@@ -6,18 +8,22 @@
 
 #define MAX_SMALL 5                                 // taille maximale du petit tableau
 #define SIZE_BLK_SMALL (128 - sizeof(size_t))       // taille d'un bloc sans l'entête
-#define ALLOC_BLOCK (small_tab - sizeof(block_t))   // adresse vers laquel les blocs alloués pointent.
+#define SIZE_FIRST_BLK_LARGE 1024
 
 typedef struct block_s block_t;
 struct block_s // structure d'un bloc (entête + corps)
 {
     size_t head;                        // pointeur vers le prochain bloc libre
     size_t size;                        // taille du bloc en nombre d'octet
-    __uint8_t body[SIZE_BLK_SMALL];     // corps de la mémoire du bloc
+    __uint8_t* body;     // corps de la mémoire du bloc
 };
 
 block_t small_tab[MAX_SMALL];   // tableau de bloc (char small_tab[MAX_SMALL * 128] est une autre otpion que avec la structure)
-size_t list_block;            // pointeur vers le premier bloc libre
+size_t small_free;            // pointeur vers le premier bloc libre
+size_t big_free;
+
+
+void* sbrk(__intptr_t increment);
 
 /**
  * @brief allocation de mémoire de taille size
