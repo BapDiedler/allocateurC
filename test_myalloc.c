@@ -147,7 +147,7 @@ int main(void)
 {
     // init_memory();
     // print_memory();
-    // my_alloc_test();
+    my_alloc_test();
     // print_memory();
     // free_test();
     // realloc_test();

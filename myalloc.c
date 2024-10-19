@@ -27,24 +27,41 @@ void* my_alloc(size_t size)
 {
     if(size > SIZE_BLK_SMALL)
     {
-        if(big_free == 0)
+        if(size % sizeof(size_t) != 0)
+            size = sizeof(size_t) * (size / sizeof(size_t) + 1);
+
+        large_block_t *previous_ptr = (large_block_t *)big_free;
+        large_block_t *ptr = (large_block_t *)big_free;
+        while(ptr != 0)
         {
-            return sbrk(size+2*sizeof(size_t));
-        }else{
-            block_t* tmp = (block_t*)big_free;
-            if(tmp->size < size + 2*sizeof(size_t) + SIZE_BLK_SMALL)
-            {
-                big_free = tmp->head;
-                tmp->head += 1;
-                return tmp->body;
-            }else
-            {
-                size_t k = tmp->size - (size + 2*sizeof(size_t));
-                k = k - (k%sizeof(size_t));
-                
-            }
+            if(ptr->size > size + 2 * sizeof(size_t)) break;
+            previous_ptr = ptr;
+            ptr = (large_block_t *)ptr->head;
         }
-        //cherche big free. Block de taille au moins size+2*sizeof(soze_t)
+
+        if(ptr == 0)
+        {
+            if(ptr = sbrk(size+2*sizeof(size_t)) == (void*)-1)
+            {
+                ERROR;
+                return NULL;
+            }
+            ptr->head += 1;
+            ptr->size = size + 2 * sizeof(size_t);
+        }else if(ptr->size < size + 2*sizeof(size_t) + SIZE_BLK_SMALL)
+        {
+            if(previous_ptr == big_free) big_free = ptr;
+            previous_ptr = ptr;
+            ptr->head += 1;
+        }else
+        {
+            size_t k = size + 2*sizeof(size_t);
+            ptr->size -= k;
+            ptr = (size_t *)((char *)ptr + ptr->size);
+            ptr->head = 1;
+            ptr->size = k;
+        }
+        return ptr->body;
     }
     if(size <= SIZE_BLK_SMALL && small_free != 0)
     {
