@@ -55,8 +55,9 @@ void* my_realloc(void* ptr, size_t size);
 /**
  * @brief affiche les blocs libres et occupés
  */
-void print_memory(void);
+void print_small_memory(void);
 
+void print_large_memory(void);
 /**
  * @brief initialisation de la mémoire
  */

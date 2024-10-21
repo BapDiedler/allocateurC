@@ -21,8 +21,15 @@ void my_alloc_test(void)
     (size_t)ptr_head(valid_tab2)->head %2 == 1 ? VALID : ERROR;
     (size_t)ptr_head(valid_tab3)->head %2 == 1 ? VALID : ERROR;
 
-    error_tab1 == NULL ? VALID : ERROR;
-    error_tab2 == NULL ? VALID : ERROR;
+    error_tab1 != NULL ? VALID : ERROR;
+    error_tab2 != NULL ? VALID : ERROR;
+
+    error_tab1 != error_tab2 ? VALID : ERROR;
+    (size_t)error_tab1 - 1 >= 200 ? VALID : ERROR;
+    ((size_t)error_tab1 - 2) % 2 == 1 ? VALID : ERROR;
+
+    (size_t)error_tab2 - 1 >= sizeof(block_t) ? VALID : ERROR;
+    ((size_t)error_tab2 - 2) % 2 == 1 ? VALID : ERROR;
 
     for(int i = 0; i < MAX_SMALL-3; i++)// -3 car déjà 3 blocs alloués
     {
@@ -31,21 +38,35 @@ void my_alloc_test(void)
 
     char* error_tab3 = (char*)my_alloc(3);
     error_tab3 == NULL ? VALID : ERROR;
+
+    char* arr1 = (char*)my_alloc(230);
+    (size_t)arr1 - 1 >= 230 ? VALID : ERROR;
+    ((size_t)arr1 - 2) % 2 == 1 ? VALID : ERROR;
+    char* arr2 = (char*)my_alloc(1024);
+    (size_t)arr2 - 1 >= 1024 ? VALID : ERROR;
+    ((size_t)arr2 - 2) % 2 == 1 ? VALID : ERROR;
+    char* arr3 = (char*)my_alloc(385);
+    (size_t)arr3 - 1 >= 385 ? VALID : ERROR;
+    ((size_t)arr3 - 2) % 2 == 1 ? VALID : ERROR;
+    char* arr4 = (char*)my_alloc(1234);
+    (size_t)arr4 - 1 >= 1234 ? VALID : ERROR;
+    ((size_t)arr4 - 2) % 2 == 1 ? VALID : ERROR;
+    print_large_memory();
 }
 
 void free_test(void)
 {
     init_memory();
-    print_memory();
+    print_small_memory();
     char* tab = (char*)my_alloc(57);
 
     ptr_head(tab)->head % 2 == 1 ? VALID : ERROR;
 
-    print_memory();
+    print_small_memory();
 
     my_free(tab);
 
-    print_memory();
+    print_small_memory();
 
     ptr_head(tab)->head % 2 == 0 && head() == ptr_head(tab) ? VALID : ERROR;
 
@@ -68,9 +89,9 @@ void realloc_test(void)
     char* tab2 = (char*)my_realloc(tab1, 100);
 
     char* tab3 = (char*)my_alloc(57);
-    print_memory();
+    print_large_memory();
     char* tab4 = (char*)my_realloc(tab3, sizeof(block_t));
-    print_memory();
+    print_large_memory();
     tab1 == tab2 ? VALID : ERROR;
     tab4 == NULL ? VALID : ERROR;
     tab3 != NULL ? VALID : ERROR;
@@ -145,7 +166,8 @@ void random_test(void)
 
 int main(void)
 {
-    // init_memory();
+    init_memory();
+    print_large_memory();
     // print_memory();
     my_alloc_test();
     // print_memory();

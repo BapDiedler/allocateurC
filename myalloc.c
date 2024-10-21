@@ -2,10 +2,6 @@
 
 void init_memory(void)
 {
-    // if(!(sizeof(block_t)%sizeof(size_t) == 0 && sizeof(block_t)> SIZE_BLK_SMALL))
-    // {
-
-    // }
     if((big_free = (size_t)sbrk(SIZE_FIRST_BLK_LARGE)) == (size_t)-1)
     {
         ERROR;
@@ -28,38 +24,43 @@ void* my_alloc(size_t size)
     if(size > SIZE_BLK_SMALL)
     {
         if(size % sizeof(size_t) != 0)
-            size = sizeof(size_t) * (size / sizeof(size_t) + 1);
+            size = sizeof(size_t) * ((size / sizeof(size_t)) + 1);
 
-        large_block_t *previous_ptr = (large_block_t *)big_free;
+        large_block_t *prev_ptr = (large_block_t *)big_free;
         large_block_t *ptr = (large_block_t *)big_free;
         while(ptr != 0)
         {
-            if(ptr->size > size + 2 * sizeof(size_t)) break;
-            previous_ptr = ptr;
+            if(ptr->size > size + 2 * sizeof(size_t))
+                break;
+            prev_ptr = ptr;
             ptr = (large_block_t *)ptr->head;
         }
 
         if(ptr == 0)
         {
-            if(ptr = sbrk(size+2*sizeof(size_t)) == (void*)-1)
+            if((ptr = (large_block_t *)sbrk(size+2*sizeof(size_t))) == (void*)-1)
             {
                 ERROR;
                 return NULL;
             }
             ptr->head += 1;
             ptr->size = size + 2 * sizeof(size_t);
+            ptr->body = (__uint8_t*)((size_t)ptr->size + 1);
         }else if(ptr->size < size + 2*sizeof(size_t) + SIZE_BLK_SMALL)
         {
-            if(previous_ptr == big_free) big_free = ptr;
-            previous_ptr = ptr;
+            if(prev_ptr == (large_block_t *)big_free)
+                big_free = (size_t)ptr;
+            prev_ptr = ptr;
             ptr->head += 1;
+            ptr->body = (__uint8_t*)((size_t)ptr->size + 1);
         }else
         {
             size_t k = size + 2*sizeof(size_t);
             ptr->size -= k;
-            ptr = (size_t *)((char *)ptr + ptr->size);
+            ptr = (large_block_t *)((__uint8_t *)ptr + ptr->size);
             ptr->head = 1;
             ptr->size = k;
+            ptr->body = (__uint8_t*)((size_t)ptr->size + 1);
         }
         return ptr->body;
     }
@@ -112,7 +113,7 @@ void* my_realloc(void* ptr, size_t size)
     return ptr;
 }
 
-void print_memory(void)
+void print_small_memory(void)
 {
     printf("WARNING: THE NEXT PART IS A PRINT OF MEMORY !!!!!\n");
     for(int i = 0; i < MAX_SMALL-1; i++)
@@ -120,6 +121,20 @@ void print_memory(void)
         printf("%p | ",(void*)small_tab[i].head);
     }
     printf("%p\n",(void*)small_tab[MAX_SMALL-1].head);
+    printf("END OF PRINT !!!!!\n");
+}
+
+void print_large_memory(void)
+{
+    printf("WARNING: THE NEXT PART IS A PRINT OF MEMORY !!!!!\n");
+    large_block_t* tmp = (large_block_t*)big_free;
+
+    while(tmp != 0)
+    {
+        printf("(%ld,%ld) |",tmp->head,tmp->size);
+        tmp = (large_block_t*)tmp->head;
+    }
+    printf("end \n");
     printf("END OF PRINT !!!!!\n");
 }
 
@@ -141,5 +156,5 @@ int is_free(void* ptr)
 
 block_t* ptr_head(void* ptr)
 {
-    return (block_t*)((size_t *)ptr - 1);
+    return (block_t*)((size_t *)ptr - 2);
 }
