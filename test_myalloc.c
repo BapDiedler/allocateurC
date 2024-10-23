@@ -26,10 +26,10 @@ void my_alloc_test(void)
 
     error_tab1 != error_tab2 ? VALID : ERROR;
     (size_t)error_tab1 - 1 >= 200 ? VALID : ERROR;
-    ((size_t)error_tab1 - 2) % 2 == 1 ? VALID : ERROR;
+    (size_t)ptr_head(error_tab1)->head %2 == 1 ? VALID : ERROR;
 
     (size_t)error_tab2 - 1 >= sizeof(block_t) ? VALID : ERROR;
-    ((size_t)error_tab2 - 2) % 2 == 1 ? VALID : ERROR;
+    (size_t)ptr_head(error_tab2)->head %2 == 1 ? VALID : ERROR;
 
     for(int i = 0; i < MAX_SMALL-3; i++)// -3 car déjà 3 blocs alloués
     {
@@ -41,28 +41,26 @@ void my_alloc_test(void)
 
     char* arr1 = (char*)my_alloc(230);
     (size_t)arr1 - 1 >= 230 ? VALID : ERROR;
-    ((size_t)arr1 - 2) % 2 == 1 ? VALID : ERROR;
+    (size_t)ptr_head(arr1)->head %2 == 1 ? VALID : ERROR;
     char* arr2 = (char*)my_alloc(1024);
     (size_t)arr2 - 1 >= 1024 ? VALID : ERROR;
-    ((size_t)arr2 - 2) % 2 == 1 ? VALID : ERROR;
+    (size_t)ptr_head(arr2)->head %2 == 1 ? VALID : ERROR;
     char* arr3 = (char*)my_alloc(385);
     (size_t)arr3 - 1 >= 385 ? VALID : ERROR;
-    ((size_t)arr3 - 2) % 2 == 1 ? VALID : ERROR;
+    (size_t)ptr_head(arr3)->head %2 == 1 ? VALID : ERROR;
     char* arr4 = (char*)my_alloc(1234);
     (size_t)arr4 - 1 >= 1234 ? VALID : ERROR;
-    ((size_t)arr4 - 2) % 2 == 1 ? VALID : ERROR;
+    (size_t)ptr_head(arr4)->head %2 == 1 ? VALID : ERROR;
     print_large_memory();
 }
 
 void free_test(void)
 {
     init_memory();
-    print_small_memory();
+    //print_small_memory();
     char* tab = (char*)my_alloc(57);
 
     ptr_head(tab)->head % 2 == 1 ? VALID : ERROR;
-
-    print_small_memory();
 
     my_free(tab);
 
@@ -71,6 +69,12 @@ void free_test(void)
     ptr_head(tab)->head % 2 == 0 && head() == ptr_head(tab) ? VALID : ERROR;
 
     char* error_tab1 = (char*)my_alloc(200);
+    (size_t)ptr_head(error_tab1)->head %2 == 1 ? VALID : ERROR;
+
+    my_free(error_tab1);
+
+    (size_t)ptr_head(error_tab1)->head %2 == 0 ? VALID : ERROR;
+
     my_free(error_tab1);
 
     char* error_tab2 = (char*)my_alloc(16);
@@ -167,11 +171,11 @@ void random_test(void)
 int main(void)
 {
     init_memory();
-    print_large_memory();
+    //print_large_memory();
     // print_memory();
-    my_alloc_test();
+    // my_alloc_test();
     // print_memory();
-    // free_test();
+    free_test();
     // realloc_test();
     // add_value_test();
     // time_test();

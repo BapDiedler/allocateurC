@@ -6,7 +6,7 @@
 #define VALID printf("valid\n"), fflush(stdout)
 #define ERROR printf("ERROR\n"), fflush(stdout)
 
-#define MAX_SMALL 5                                 // taille maximale du petit tableau
+#define MAX_SMALL 5                                   // taille maximale du petit tableau
 #define SIZE_BLK_SMALL (128 - 2*sizeof(size_t))       // taille d'un bloc sans l'entête
 #define SIZE_FIRST_BLK_LARGE 1024
 

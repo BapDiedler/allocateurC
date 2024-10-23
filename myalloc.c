@@ -21,14 +21,14 @@ void init_memory(void)
 
 void* my_alloc(size_t size)
 {
-    if(size > SIZE_BLK_SMALL)
+    if(size > SIZE_BLK_SMALL)   //allocation de large bloc
     {
-        if(size % sizeof(size_t) != 0)
+        if(size % sizeof(size_t) != 0)  //taille multiple de size_t
             size = sizeof(size_t) * ((size / sizeof(size_t)) + 1);
 
         large_block_t *prev_ptr = (large_block_t *)big_free;
         large_block_t *ptr = (large_block_t *)big_free;
-        while(ptr != 0)
+        while(ptr != 0) //recherche du premier bloc libre de bonne taille
         {
             if(ptr->size > size + 2 * sizeof(size_t))
                 break;
@@ -36,7 +36,7 @@ void* my_alloc(size_t size)
             ptr = (large_block_t *)ptr->head;
         }
 
-        if(ptr == 0)
+        if(ptr == 0)    //ajout de mémoire
         {
             if((ptr = (large_block_t *)sbrk(size+2*sizeof(size_t))) == (void*)-1)
             {
@@ -46,25 +46,24 @@ void* my_alloc(size_t size)
             ptr->head += 1;
             ptr->size = size + 2 * sizeof(size_t);
             ptr->body = (__uint8_t*)((size_t)ptr->size + 1);
-        }else if(ptr->size < size + 2*sizeof(size_t) + SIZE_BLK_SMALL)
+        }else if(ptr->size < size + 2*sizeof(size_t) + SIZE_BLK_SMALL)  //le bloc trouvé est de bonne taille
         {
             if(prev_ptr == (large_block_t *)big_free)
                 big_free = (size_t)ptr;
             prev_ptr = ptr;
             ptr->head += 1;
             ptr->body = (__uint8_t*)((size_t)ptr->size + 1);
-        }else
+        }else   //le bloc trouvé est ttrop grand (découpage de la mémoire)
         {
             size_t k = size + 2*sizeof(size_t);
             ptr->size -= k;
             ptr = (large_block_t *)((__uint8_t *)ptr + ptr->size);
             ptr->head = 1;
             ptr->size = k;
-            ptr->body = (__uint8_t*)((size_t)ptr->size + 1);
         }
-        return ptr->body;
+        return &ptr->body;
     }
-    if(size <= SIZE_BLK_SMALL && small_free != 0)
+    if(size <= SIZE_BLK_SMALL && small_free != 0)   //bloc de petite taille
     {
         block_t* tmp = (block_t*)small_free;
         next();
@@ -78,20 +77,33 @@ void my_free(void* ptr)
 {
     size_t new_small_tab = (size_t)small_tab;
     size_t new_ptr = (size_t)ptr;
-    if(new_small_tab > new_ptr || (new_ptr > (new_small_tab + sizeof(block_t) * MAX_SMALL)))
+    if(new_ptr >= new_small_tab && new_ptr <= (new_small_tab + sizeof(block_t) * MAX_SMALL))
     {
-        printf("The pointer is outside the working memory area.\n");
-    }else if((new_ptr - new_small_tab) % sizeof(block_t) != sizeof(size_t))
-    {
-        printf("The pointer isn't at the begining of a block.\n");
-    }else if(is_free(ptr))
-    {
-
-        printf("The pointer is in an empty block.\n");
+        if(new_small_tab > new_ptr || (new_ptr > (new_small_tab + sizeof(block_t) * MAX_SMALL)))
+        {
+            printf("The pointer is outside the working memory area.\n");
+        }else if((new_ptr - new_small_tab) % sizeof(block_t) != 2*sizeof(size_t))
+        {
+            printf("The pointer isn't at the begining of a block.\n");
+        }else if(is_free(ptr))
+        {
+            printf("The pointer is in an empty block.\n");
+        }else
+        {
+            ptr_head(ptr)->head = (size_t)small_free;
+            small_free = (size_t)ptr_head(ptr);
+        }
     }else
     {
-        ptr_head(ptr)->head = (size_t)small_free;
-        small_free = (size_t)ptr_head(ptr);
+        if (ptr_head(ptr)->head % 2 == 0)
+        {
+            printf("The pointer is in an large empty block.\n");
+        }
+        else
+        {
+            ptr_head(ptr)->head = big_free;
+            big_free = (size_t)ptr_head(ptr);
+        }
     }
 }
 
@@ -102,7 +114,15 @@ void* my_realloc(void* ptr, size_t size)
 
     if(new_small_tab > new_ptr || (new_ptr > (new_small_tab + sizeof(block_t) * MAX_SMALL)))
     {
-        return NULL;
+        if (ptr_head(ptr)->head % 2 == 0)
+        {
+            return NULL;
+        }
+        else
+        {
+            ptr_head(ptr)->size = size;
+            return ptr;
+        }
     }else if((new_ptr - new_small_tab) % sizeof(block_t) != sizeof(size_t))
     {
         return NULL;
