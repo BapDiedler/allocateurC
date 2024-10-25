@@ -23,7 +23,7 @@ void* my_alloc(size_t size)
 {
     if(size > SIZE_BLK_SMALL)   //allocation de large bloc
     {
-        if(size % sizeof(size_t) != 0)  //taille multiple de size_t
+        if(size % sizeof(size_t) != 0)
             size = sizeof(size_t) * ((size / sizeof(size_t)) + 1);
 
         large_block_t *prev_ptr = (large_block_t *)big_free;
@@ -80,15 +80,12 @@ void my_free(void* ptr)
     if(new_ptr >= new_small_tab && new_ptr <= (new_small_tab + sizeof(block_t) * MAX_SMALL))
     {
         if(new_small_tab > new_ptr || (new_ptr > (new_small_tab + sizeof(block_t) * MAX_SMALL)))
-        {
             printf("The pointer is outside the working memory area.\n");
-        }else if((new_ptr - new_small_tab) % sizeof(block_t) != 2*sizeof(size_t))
-        {
+        else if((new_ptr - new_small_tab) % sizeof(block_t) != 2*sizeof(size_t))
             printf("The pointer isn't at the begining of a block.\n");
-        }else if(is_free(ptr))
-        {
+        else if(is_free(ptr))
             printf("The pointer is in an empty block.\n");
-        }else
+        else
         {
             ptr_head(ptr)->head = (size_t)small_free;
             small_free = (size_t)ptr_head(ptr);
@@ -96,40 +93,64 @@ void my_free(void* ptr)
     }else
     {
         if (ptr_head(ptr)->head % 2 == 0)
-        {
             printf("The pointer is in an large empty block.\n");
-        }
         else
         {
             ptr_head(ptr)->head = big_free;
             big_free = (size_t)ptr_head(ptr);
         }
     }
+    
+    size_t pos_next = (size_t)ptr_head(ptr)+1+ptr_head(ptr)->size;
+    large_block_t* tmp = (large_block_t*)ptr_head(big_free)->head;
+    while(ptr_head(tmp)->head != 0)
+    {
+        if(ptr_head(tmp)->head == pos_next)
+        {
+            ptr_head(ptr)->size = ptr_head(ptr)->size + 2*sizeof(size_t) + ptr_head(ptr_head(tmp)->head)->size;
+            tmp = ptr_head(tmp)->head;
+            break;
+        }
+        tmp = tmp = ptr_head(tmp)->head;
+    }
 }
+
+void copy(char *ptr1, char *ptr2)
+{
+    for (size_t i = 0; i < ptr_head(ptr1)->size; i++)
+    {
+        *(ptr1 + i) = *(ptr2 + i);
+    }
+}
+
 
 void* my_realloc(void* ptr, size_t size)
 {
     size_t new_small_tab = (size_t)small_tab;
     size_t new_ptr = (size_t)ptr;
 
-    if(new_small_tab > new_ptr || (new_ptr > (new_small_tab + sizeof(block_t) * MAX_SMALL)))
+    if(new_small_tab > new_ptr || size >= SIZE_BLK_SMALL || (new_ptr > (new_small_tab + sizeof(block_t) * MAX_SMALL))) 
     {
         if (ptr_head(ptr)->head % 2 == 0)
         {
             return NULL;
-        }
-        else
+        }else
         {
+            if(size >= ptr_head(ptr)->size)
+            {
+                new_ptr = (size_t)my_alloc(size);
+                copy((char*)new_ptr, (char*)ptr);
+                my_free(ptr);
+                return (void*)new_ptr;
+            }
             ptr_head(ptr)->size = size;
             return ptr;
         }
-    }else if((new_ptr - new_small_tab) % sizeof(block_t) != sizeof(size_t))
-    {
-        return NULL;
-    }else if(size > SIZE_BLK_SMALL || is_free(ptr))
-    {
-        return NULL;
     }
+    if((new_ptr - new_small_tab) % sizeof(block_t) != 2*sizeof(size_t))
+        return NULL;
+    if(size > SIZE_BLK_SMALL || is_free(ptr))
+        return NULL;
     return ptr;
 }
 
@@ -137,9 +158,7 @@ void print_small_memory(void)
 {
     printf("WARNING: THE NEXT PART IS A PRINT OF MEMORY !!!!!\n");
     for(int i = 0; i < MAX_SMALL-1; i++)
-    {
         printf("%p | ",(void*)small_tab[i].head);
-    }
     printf("%p\n",(void*)small_tab[MAX_SMALL-1].head);
     printf("END OF PRINT !!!!!\n");
 }

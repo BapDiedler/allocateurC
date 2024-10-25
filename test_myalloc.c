@@ -96,8 +96,8 @@ void realloc_test(void)
     print_large_memory();
     char* tab4 = (char*)my_realloc(tab3, sizeof(block_t));
     print_large_memory();
-    tab1 == tab2 ? VALID : ERROR;
-    tab4 == NULL ? VALID : ERROR;
+    tab1 != tab2 ? VALID : ERROR;
+    tab4 != NULL ? VALID : ERROR;
     tab3 != NULL ? VALID : ERROR;
 
 }
@@ -109,20 +109,45 @@ void add_value_test(void)
     tab1[0] == 0 ? VALID : ERROR;
     tab1[0] = 10;
     tab1[0] == 10 ? VALID : ERROR;
+    char* tab2 = (char*)my_realloc(tab1,345);
+    tab2[0] == 10 ? VALID : ERROR;
+    tab2[1] = 11;
+    tab2[1] == 11 ? VALID : ERROR;
 }
 
 void time_test(void)
 {
-    init_memory();
+    // init_memory();
     clock_t start = clock();
-    for(int i=0; i<MAX_SMALL; i++) my_alloc(100);
+    // for(int i=0; i<MAX_SMALL; i++) my_alloc(10);
     clock_t end = clock();
-    printf("my_alloc time: %ld s\n",(end-start)*1000/CLOCKS_PER_SEC);
+    // printf("my_alloc time: %ld s\n",(end-start)*1000/CLOCKS_PER_SEC);
+    // init_memory();
+    // start = clock();
+    // for(int i=0; i<MAX_SMALL; i++) malloc(10);
+    // end = clock();
+    // printf("malloc time: %ld s\n",(end-start)*1000/CLOCKS_PER_SEC);
+
+
     init_memory();
+    void** arr = malloc(sizeof(void*)*MAX_SMALL);
     start = clock();
-    for(int i=0; i<MAX_SMALL; i++) malloc(100);
+    for(int i=0; i<MAX_SMALL; i++) arr[i] = my_alloc(10);
+    for(int i=0; i<MAX_SMALL/2; i++) arr[i] = my_realloc(arr[i],560);
+    for(int i=0; i<MAX_SMALL/2; i++) my_free(arr[i]);
+    for(int i=0; i<MAX_SMALL/2; i++) arr[i] = my_alloc(450);
     end = clock();
-    printf("malloc time: %ld s\n",(end-start)*1000/CLOCKS_PER_SEC);
+    printf("my_alloc time: %ld s\n",(end-start)*100000/CLOCKS_PER_SEC);
+    free(arr);
+    init_memory();
+    arr = malloc(sizeof(void*)*MAX_SMALL);
+    start = clock();
+    for(int i=0; i<MAX_SMALL; i++) arr[i] = malloc(10);
+    for(int i=0; i<MAX_SMALL/2; i++) arr[i] = realloc(arr[i],560);
+    for(int i=0; i<MAX_SMALL/2; i++) free(arr[i]);
+    for(int i=0; i<MAX_SMALL/2; i++) arr[i] = malloc(450);
+    end = clock();
+    printf("malloc time: %ld s\n",(end-start)*100000/CLOCKS_PER_SEC);
 }
 
 void out_of_tab_test()
@@ -135,7 +160,7 @@ void out_of_tab_test()
     tab2 = tab1-sizeof(block_t);
     my_realloc(tab2,10)==NULL ? VALID : ERROR;
     my_free(tab2);
-    tab2 = tab1+128*sizeof(block_t);
+    tab2 = tab1+MAX_SMALL*sizeof(block_t);
     my_realloc(tab2,10)==NULL ? VALID : ERROR;
     my_free(tab2);
 }
@@ -145,7 +170,7 @@ void random_test(void)
     init_memory();
     srand(time(NULL));
     
-    int size_index = rand() % SIZE_BLK_SMALL;
+    int size_index = rand() % (SIZE_BLK_SMALL+2);
     char* tab = my_alloc(size_index);
     for(int i=0; i<size_index; i++)
     {
@@ -166,6 +191,7 @@ void random_test(void)
         printf("%d | ",tab_realloc[i]);fflush(stdout);
     }
     printf("\n\n");
+    printf("%ld\n",(size_t)tab_realloc);
 }
 
 int main(void)
@@ -175,11 +201,11 @@ int main(void)
     // print_memory();
     // my_alloc_test();
     // print_memory();
-    free_test();
+    // free_test();
     // realloc_test();
     // add_value_test();
     // time_test();
     // out_of_tab_test();
-    // random_test();
+     random_test();
     return 0;
 }
