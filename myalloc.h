@@ -6,7 +6,7 @@
 #define VALID printf("valid\n"), fflush(stdout)
 #define ERROR printf("ERROR\n"), fflush(stdout)
 
-#define MAX_SMALL 100                                  // taille maximale du petit tableau
+#define MAX_SMALL 10000                                  // taille maximale du petit tableau
 #define SIZE_BLK_SMALL (128 - 2*sizeof(size_t))       // taille d'un bloc sans l'entête
 #define SIZE_FIRST_BLK_LARGE 1024
 
@@ -57,6 +57,9 @@ void* my_realloc(void* ptr, size_t size);
  */
 void print_small_memory(void);
 
+/**
+ * @brief affiche les blocs libres et occupés
+ */
 void print_large_memory(void);
 /**
  * @brief initialisation de la mémoire
@@ -68,6 +71,12 @@ void init_memory(void);
  * @return bloc libre
  */
 block_t* head(void);
+
+/**
+ * @brief premier bloc large vide
+ * @return bloc libre
+ */
+large_block_t* head_big_free(void);
 
 /**
  * @brief passe au prochain bloc libre
@@ -87,3 +96,5 @@ int is_free(void* ptr);
  * @return block_t* pointeur de la tête du bloc
  */
 block_t* ptr_head(void* ptr);
+
+size_t size_big_free(void);
