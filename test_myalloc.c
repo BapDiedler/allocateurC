@@ -459,8 +459,7 @@ void time_test(void)
         for(int i=0; i<MAX_SMALL; i++)arr[i] = my_alloc(200);
         for(int i=0; i<MAX_SMALL/2; i++)arr[i] = my_realloc(arr[i],700);
         for(int i=0; i<MAX_SMALL; i++)my_free(arr[i]);
-        printf("%ld\n",size_big_free())
-;        for(int i=0; i<MAX_SMALL/2; i++)arr[i] = my_alloc(450);
+        for(int i=0; i<MAX_SMALL/2; i++)arr[i] = my_alloc(450);
     }
     end = clock();
     printf("my_alloc time: %ld s\n",(end-start)*100000/CLOCKS_PER_SEC);
@@ -541,8 +540,8 @@ int main(void)
     // my_realloc_test_large();
     // realloc_test();
     // add_value_test();
-    // time_test();
+     time_test();
     // out_of_tab_test();
-     random_test();
+    // random_test();
     return 0;
 }

@@ -11,13 +11,6 @@
 #define SIZE_FIRST_BLK_LARGE 1024                       // size of the first large block
 
 typedef struct block_s block_t;
-typedef struct large_block_s large_block_t;
-struct large_block_s // struct of block (header + size + body)
-{
-    size_t head;                        // pointer to next free block
-    size_t size;                        // body's block size
-    __uint8_t body[];                   // body's block
-};
 
 struct block_s // struct of block (header + size + body)
 {
@@ -30,6 +23,11 @@ struct block_s // struct of block (header + size + body)
  * @brief change the location of the program break
  */
 void* sbrk(__intptr_t increment);
+
+/**
+ * @brief initialise memory
+ */
+void init_memory(void);
 
 /**
  * @brief       allocate size bytes and return a pointer to the allocated memory
@@ -53,6 +51,11 @@ void my_free(void* ptr);
 void* my_realloc(void* ptr, size_t size);
 
 /**
+ * @brief copy ptr in new_ptr
+ */
+void malloc_copy_free(__uint8_t* new_ptr, __uint8_t*ptr);
+
+/**
  * @brief print smalls frees and unfrees blocks
  */
 void print_small_memory(void);
@@ -61,16 +64,6 @@ void print_small_memory(void);
  * @brief print larges frees blocks
  */
 void print_large_memory(void);
-
-/**
- * @brief initialise memory
- */
-void init_memory(void);
-
-/**
- * @brief passe au prochain bloc libre
- */
-void next(void);
 
 /**
  * @brief test pour savoir si un bloc est libre
@@ -86,4 +79,7 @@ int is_free(void* ptr);
  */
 block_t* ptr_head(void* ptr);
 
+/**
+ * @brief size of the list big_free
+ */
 size_t size_big_free(void);

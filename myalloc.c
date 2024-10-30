@@ -100,7 +100,7 @@ void* my_alloc(size_t size)
         return NULL;
     }
     tmp->head = 1;
-    tmp->size = size;
+    tmp->size = SIZE_BLK_SMALL;
     return tmp->body;
 }
 
@@ -112,140 +112,170 @@ void my_free(void* ptr)
 {
     if(init_mem) init_memory();   // Initialise memory area
 
-    size_t new_small_tab = (size_t)small_tab;
-    size_t new_ptr = (size_t)ptr;
-    if(new_ptr + SIZE_BLK_SMALL == (size_t)sbrk(0))
+    size_t new_ptr = (size_t)ptr_head(ptr);
+
+    // if ptr is at the end of memory area
+    if(ptr_head(ptr)->size + new_ptr == (size_t)sbrk(0))
     {
-        ptr_head(ptr)->size=0;
-        ptr_head(ptr)->head=0;
-        sbrk(-SIZE_BLK_SMALL - 2*sizeof(size_t));
-    }else if(ptr_head(ptr)->size + new_ptr == (size_t)sbrk(0))
-    {
-        ptr_head(ptr)->size=0;
-        ptr_head(ptr)->head=0;
+        ptr_head(ptr)->head = 0;
         sbrk(-ptr_head(ptr)->size - 2*sizeof(size_t));
+        return;
     }
-    else if((new_ptr >= new_small_tab && new_ptr <= (new_small_tab + sizeof(block_t) * MAX_SMALL)))
+
+    if(is_free(ptr))    // unfree block
     {
-        if(new_small_tab > new_ptr || (new_ptr > (new_small_tab + sizeof(block_t) * MAX_SMALL)))
-            printf("The pointer is outside the working memory area.\n");
-        else if((new_ptr - new_small_tab) % sizeof(block_t) != 2*sizeof(size_t))
+        printf("The pointer is in an empty block.\n");
+        return;
+    }
+
+    // ptr is out of small_tab
+    size_t new_small_tab = (size_t)small_tab;
+    if((new_ptr >= new_small_tab && new_ptr <= (new_small_tab + sizeof(block_t) * MAX_SMALL)))
+    {
+        if((new_ptr - new_small_tab) % sizeof(block_t) != 2*sizeof(size_t)) // begin of small block
             printf("The pointer isn't at the begining of small block.\n");
-        else if(is_free(ptr))
-            printf("The pointer is in an empty block.\n");
         else
-        {
+        {   // ptr could be free
             ptr_head(ptr)->head = (size_t)small_free;
             small_free = (size_t)ptr_head(ptr);
         }
-    }else
+        return;
+    }
+
+    // we don't have free large block
+    if(big_free == 0)
     {
-        if(is_free(ptr))
-            printf("The pointer is in an empty block.\n");
-        else
+        ptr_head(ptr)->head = 0;
+        big_free = (size_t)ptr_head(ptr);
+        return;
+    }
+
+    // defragmentation of memory area
+    block_t* large_ptr = (block_t*)big_free;
+    block_t* prev_large_ptr = NULL;
+    while(large_ptr != NULL)    // while we're not at the end of list
+    {
+        if(((__uint8_t*)large_ptr + large_ptr->size + 2*sizeof(size_t)) == (__uint8_t*)ptr_head(ptr))   // before ptr
         {
-            // block_t* tmp = (block_t*)big_free;
-            // if(tmp == NULL)
-            // {
-            //     ptr_head(ptr)->head = big_free;
-            //     big_free = (size_t)ptr_head(ptr);
-            // }else if((size_t)tmp + tmp->size + 2*sizeof(size_t) == (size_t)ptr_head(ptr))
-            // {
-            //     tmp->size += 2*sizeof(size_t) + ptr_head(ptr)->size ;
-            //     ptr_head(ptr)->head = 0;
-            // }else if((size_t)ptr_head(ptr)->size + (size_t)ptr == (size_t)tmp)
-            // {
-            //     ptr_head(ptr)->size += 2*sizeof(size_t) + tmp->size;
-            //     ptr_head(ptr)->head = big_free;
-            //     tmp->head=0;
-            //     big_free = (size_t)ptr_head(ptr);
-            // }else
-            // {
-            //     tmp = (block_t*)tmp->head;
-            //     block_t* before_tmp = (block_t*)big_free;
-                
-            //     while(tmp != NULL && (size_t)tmp + tmp->size + 2*sizeof(size_t) != (size_t)ptr_head(ptr) && ptr_head(ptr)->size + (size_t)ptr != (size_t)tmp)
-            //     {
-            //         before_tmp = tmp;
-            //         tmp = (block_t*)tmp->head;
-            //     }
-            //     if(tmp == NULL)
-            //     {
-            //         ptr_head(ptr)->head = big_free;
-            //         big_free = (size_t)ptr_head(ptr);
-            //     }
-            //     else if((size_t)tmp + tmp->size + 2*sizeof(size_t) == (size_t)ptr_head(ptr))
-            //     {
-            //         tmp->size += 2*sizeof(size_t) + ptr_head(ptr)->size ;
-            //         ptr_head(ptr)->head = 0;
-            //     }else if(ptr_head(ptr)->size + (size_t)ptr == (size_t)tmp)
-            //     {
-            //         ptr_head(ptr)->size += 2*sizeof(size_t) + tmp->size ;
-            //         before_tmp->head = tmp->head;
-            //         ptr_head(ptr)->head = big_free;
-            //         big_free = (size_t)ptr_head(ptr);
-            //     }
-            //     // ptr_head(ptr)->head = big_free;
-            //     // big_free = (size_t)ptr_head(ptr);
-            // }
-            // block_t* freeBlock = (block_t*)ptr_head(ptr);
-
-            // ptr_head(ptr)->head = big_free;
-            // big_free = (size_t)ptr_head(ptr);
-            // // Here I don't check if the address points to the start of the block (With the current global variables, I don't think there is any ways of doing it)
-
-            block_t* freeBlock = (block_t*)ptr_head(ptr);
-            if(!is_free(ptr))
-            {
-                if(big_free == 0)
-                {
-                    big_free = (size_t)freeBlock;
-                    ((block_t*)big_free)->head = 0;
-                    return;
-                }
-
-
-                block_t* currentLargeBlock = (block_t*)big_free;
-                block_t* prevLargeBlock = NULL;
-
-                // I loop over every free block to check if it is adjacent to the block that need to be freed (avoid memory fragmentation)
-                while(currentLargeBlock != NULL)
-                {
-                    if( ((char*)currentLargeBlock + currentLargeBlock->size + 2*sizeof(size_t)) == (char*)freeBlock )
-                    {
-                        currentLargeBlock->size += freeBlock->size + 2*sizeof(size_t);
-                        freeBlock->head = 0;
-                        return;
-                    }
-
-
-                    if( ((char*)freeBlock + freeBlock->size + 2*sizeof(size_t)) == (char*)currentLargeBlock )
-                    {
-                        freeBlock->size += currentLargeBlock->size + 2*sizeof(size_t);
-                        freeBlock->head = currentLargeBlock->head;
-                        if(prevLargeBlock != NULL)
-                        {
-                            prevLargeBlock->head = (size_t)freeBlock;
-                        }
-                        else
-                        {
-                            big_free = (size_t)freeBlock;
-                        }
-                        return;
-                    }
-
-                    prevLargeBlock = currentLargeBlock;	
-                    currentLargeBlock = (block_t*)currentLargeBlock->head;
-                }
-
-                // If no adjacent block found, simply add the block that nedd to be freed to the big_free list
-                freeBlock->head = (size_t)big_free;
-                big_free = (size_t)freeBlock;
-            }
+            large_ptr->size += ptr_head(ptr)->size + 2*sizeof(size_t);
+            ptr_head(ptr)->head = 0;
+            return;
         }
+        if(((__uint8_t*)ptr_head(ptr) + ptr_head(ptr)->size + 2*sizeof(size_t)) == (__uint8_t*)large_ptr)  // after ptr
+        {
+            ptr_head(ptr)->size += large_ptr->size + 2*sizeof(size_t);
+            ptr_head(ptr)->head = large_ptr->head;
+            if(prev_large_ptr != NULL)
+                prev_large_ptr->head = (size_t)ptr_head(ptr);
+            else
+                big_free = (size_t)ptr_head(ptr);
+            return;
+        }
+
+        // next block
+        prev_large_ptr = large_ptr;	
+        large_ptr = (block_t*)large_ptr->head;
+    }
+
+    // no defragmentation with ptr
+    ptr_head(ptr)->head = (size_t)big_free;
+    big_free = (size_t)ptr_head(ptr);
+}
+
+/**
+ * @brief       changes the size of the memory block pointed to by ptr to size bytes
+ * @param ptr   type void* : pointer to memory area
+ * @param size  type size_t : memory size
+ * @return      pointer to memory area with sames values than ptr
+ */
+void* my_realloc(void* ptr, size_t size)
+{
+    if(init_mem) init_memory();   // Initialise memory area
+
+    if (ptr == NULL || is_free(ptr))    // invalid pointer or free block
+        return NULL;
+
+    size_t new_small_tab = (size_t)small_tab;
+    size_t new_ptr = (size_t)ptr;
+    if(new_small_tab > new_ptr || size >= SIZE_BLK_SMALL || (new_ptr > (new_small_tab + sizeof(block_t) * MAX_SMALL)))  // out of small tab memory
+    {
+        if(size >= ptr_head(ptr)->size) // size bigger than size's ptr
+        {
+            my_free(ptr);
+            new_ptr = (size_t)my_alloc(size);
+            malloc_copy_free((__uint8_t*)new_ptr, (__uint8_t*)ptr);
+            return (void*)new_ptr;
+        }
+        ptr_head(ptr)->size = size;
+        return ptr;
+    }
+    if((new_ptr - new_small_tab) % sizeof(block_t) != 2*sizeof(size_t)) // ptr isn't a small block
+        return NULL;
+    return ptr;
+}
+
+/**
+ * @brief copy ptr2 in ptr1
+ */
+void malloc_copy_free(__uint8_t* ptr1, __uint8_t* ptr2)
+{
+    for (size_t i = 0; i < ptr_head(ptr2)->size; i++)
+    {
+        ptr1[i] = ptr2[i];
     }
 }
 
+/**
+ * @brief print smalls frees and unfrees blocks
+ */
+void print_small_memory(void)
+{
+    printf("WARNING: THE NEXT PART IS A PRINT OF MEMORY !!!!!\n");
+    for(int i = 0; i < MAX_SMALL-1; i++)
+        printf("%p | ",(void*)small_tab[i].head);
+    printf("%p\n",(void*)small_tab[MAX_SMALL-1].head);
+    printf("END OF PRINT !!!!!\n");
+}
+
+/**
+ * @brief print larges frees blocks
+ */
+void print_large_memory(void)
+{
+    printf("WARNING: THE NEXT PART IS A PRINT OF MEMORY !!!!!\n");
+    block_t* tmp = (block_t*)big_free;
+
+    while(tmp != NULL)
+    {
+        printf("%ld: (%ld,%ld)\n",(size_t)tmp,tmp->head,tmp->size);
+        tmp = (block_t*)tmp->head;
+    }
+    printf("END OF PRINT !!!!!\n");
+}
+
+/**
+ * @brief       test pour savoir si un bloc est libre
+ * @param ptr   void* : pointeur à tester
+ * @return      0 si libre
+ */
+int is_free(void* ptr)
+{
+    return ((size_t)(ptr_head(ptr)->head) % 2 ) == 0;
+}
+
+/**
+ * @brief accès au pointeur vers la tête d'un bloc
+ * @param ptr : void* poiteur du tableau d'un bloc
+ * @return block_t* pointeur de la tête du bloc
+ */
+block_t* ptr_head(void* ptr)
+{
+    return (block_t*)((size_t *)ptr - 2);
+}
+
+/**
+ * @brief size of the list big_free
+ */
 size_t size_big_free(void)
 {
     size_t res = 0;
@@ -256,77 +286,4 @@ size_t size_big_free(void)
         tmp = (block_t*)tmp->head;
     }
     return res;
-}
-
-void malloc_copy_free(char *ptr1, char *ptr2)
-{
-    for (size_t i = 0; i < ptr_head(ptr2)->size; i++)
-    {
-        ptr1[i] = ptr2[i];
-    }
-}
-
-
-void* my_realloc(void* ptr, size_t size)
-{
-    if(init_m) init_memory();   // Initialise memory area
-
-    size_t new_small_tab = (size_t)small_tab;
-    size_t new_ptr = (size_t)ptr;
-    if(new_small_tab > new_ptr || size >= SIZE_BLK_SMALL || (new_ptr > (new_small_tab + sizeof(block_t) * MAX_SMALL))) 
-    {
-        if (ptr == NULL || is_free(ptr))
-        {
-            return NULL;
-        }else
-        {
-            if(size >= ptr_head(ptr)->size)
-            {
-                my_free(ptr);
-                new_ptr = (size_t)my_alloc(size);
-                malloc_copy_free((char*)new_ptr, (char*)ptr);
-                return (void*)new_ptr;
-            }
-            ptr_head(ptr)->size = size;
-            return ptr;
-        }
-    }
-    if((new_ptr - new_small_tab) % sizeof(block_t) != 2*sizeof(size_t))
-        return NULL;
-    if(is_free(ptr))
-        return NULL;
-    return ptr;
-}
-
-void print_small_memory(void)
-{
-    printf("WARNING: THE NEXT PART IS A PRINT OF MEMORY !!!!!\n");
-    for(int i = 0; i < MAX_SMALL-1; i++)
-        printf("%p | ",(void*)small_tab[i].head);
-    printf("%p\n",(void*)small_tab[MAX_SMALL-1].head);
-    printf("END OF PRINT !!!!!\n");
-}
-
-void print_large_memory(void)
-{
-    printf("WARNING: THE NEXT PART IS A PRINT OF MEMORY !!!!!\n");
-    block_t* tmp = (block_t*)big_free;
-
-    while(tmp != NULL)
-    {
-        printf("(%ld -> %ld,%ld) |\n",(size_t)tmp,tmp->head,tmp->size);
-        tmp = (block_t*)tmp->head;
-    }
-    printf("end \n");
-    printf("END OF PRINT !!!!!\n");
-}
-
-int is_free(void* ptr)
-{
-    return ((size_t)(ptr_head(ptr)->head) % 2 ) == 0;
-}
-
-block_t* ptr_head(void* ptr)
-{
-    return (block_t*)((size_t *)ptr - 2);
 }
