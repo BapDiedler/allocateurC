@@ -6,16 +6,16 @@
 #define VALID printf("valid\n"), fflush(stdout)
 #define ERROR printf("ERROR\n"), fflush(stdout)
 
-#define MAX_SMALL 10000                                  // taille maximale du petit tableau
-#define SIZE_BLK_SMALL (128 - 2*sizeof(size_t))       // taille d'un bloc sans l'entête
-#define SIZE_FIRST_BLK_LARGE 1024
+#define MAX_SMALL 1000                                  // max size of small_tab
+#define SIZE_BLK_SMALL (128 - 2*sizeof(size_t))         // size of one block of small_tab
+#define SIZE_FIRST_BLK_LARGE 1024                       // size of the first large block
 
 typedef struct large_block_s large_block_t;
-struct large_block_s // structure d'un bloc (entête + corps)
+struct large_block_s // struct of block (header + size + body)
 {
     size_t head;                        // pointeur vers le prochain bloc libre
     size_t size;                        // taille du bloc en nombre d'octet
-    __uint8_t* body;     // corps de la mémoire du bloc
+    __uint8_t body[];     // corps de la mémoire du bloc
 };
 typedef struct block_s // structure d'un bloc (entête + corps)
 {
@@ -27,6 +27,7 @@ typedef struct block_s // structure d'un bloc (entête + corps)
 block_t small_tab[MAX_SMALL];   // tableau de bloc (char small_tab[MAX_SMALL * 128] est une autre otpion que avec la structure)
 size_t small_free;            // pointeur vers le premier bloc libre
 size_t big_free;
+size_t init_mem = 1;
 
 
 void* sbrk(__intptr_t increment);

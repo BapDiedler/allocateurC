@@ -59,6 +59,7 @@ void my_alloc_test_large(void)
         assert(arr[i] == (char)i);
     }
     size_t value_break_after = (size_t)sbrk(0);
+    //printf("%ld, %ld\n",value_break_before,value_break_after);
     assert(value_break_after == value_break_before);
 
     /* TEST BLOC LARGE AVEC DEPASSEMENT*/
@@ -311,23 +312,23 @@ void my_free_test_fusion(void)
     print_large_memory();
     char* arr1 = my_alloc(200);
     char* arr4 =  my_alloc(200);
-    // my_alloc(200);
-    // arr2 = my_alloc(200);
-    // arr3 = my_alloc(200);
-    //my_alloc(200);
+    my_alloc(200);
+    char* arr2 = my_alloc(200);
+    char* arr3 = my_alloc(200);
+    my_alloc(200);
     printf("%ld -> %ld, %ld\n",(size_t)ptr_head(arr4),ptr_head(arr4)->head,ptr_head(arr4)->size);
-    // printf("%ld -> %ld, %ld\n",(size_t)ptr_head(arr3),ptr_head(arr3)->head,ptr_head(arr3)->size);
-    // printf("%ld -> %ld, %ld\n",(size_t)ptr_head(arr2),ptr_head(arr2)->head,ptr_head(arr2)->size);
+    printf("%ld -> %ld, %ld\n",(size_t)ptr_head(arr3),ptr_head(arr3)->head,ptr_head(arr3)->size);
+    printf("%ld -> %ld, %ld\n",(size_t)ptr_head(arr2),ptr_head(arr2)->head,ptr_head(arr2)->size);
     printf("%ld -> %ld, %ld\n",(size_t)ptr_head(arr1),ptr_head(arr1)->head,ptr_head(arr1)->size);
     print_large_memory();
     my_free(arr1);
     print_large_memory();
 
-    // my_free(arr3);
-    // print_large_memory();
-    // my_free(arr2);
-    // print_large_memory();
-    //assert(arr3+ptr_head(arr3)->size == arr2);
+    my_free(arr3);
+    print_large_memory();
+    my_free(arr2);
+    print_large_memory();
+    //assert(arr3+ptr_head(arr3)->size == arr2 + ptr_head(arr2)->size);
 
     my_free(arr4);
     print_large_memory();
@@ -455,12 +456,11 @@ void time_test(void)
     start = clock();
     for(int j=0; j<10; j++)
     {
-        //print_large_memory();
         for(int i=0; i<MAX_SMALL; i++)arr[i] = my_alloc(200);
         for(int i=0; i<MAX_SMALL/2; i++)arr[i] = my_realloc(arr[i],700);
-        //print_large_memory();
         for(int i=0; i<MAX_SMALL; i++)my_free(arr[i]);
-        for(int i=0; i<MAX_SMALL/2; i++)arr[i] = my_alloc(450);
+        printf("%ld\n",size_big_free())
+;        for(int i=0; i<MAX_SMALL/2; i++)arr[i] = my_alloc(450);
     }
     end = clock();
     printf("my_alloc time: %ld s\n",(end-start)*100000/CLOCKS_PER_SEC);
@@ -526,7 +526,7 @@ void random_test(void)
 int main(void)
 {
     // my_alloc_test_small();
-    //free_test_last_block();
+    // free_test_last_block();
     // my_alloc_test_large();
     // init_memory();
     // print_large_memory();
@@ -541,8 +541,8 @@ int main(void)
     // my_realloc_test_large();
     // realloc_test();
     // add_value_test();
-     time_test();
+    // time_test();
     // out_of_tab_test();
-    // random_test();
+     random_test();
     return 0;
 }
