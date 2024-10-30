@@ -21,10 +21,10 @@ typedef struct block_s // structure d'un bloc (entête + corps)
 {
     size_t head;                        // pointeur vers le prochain bloc libre
     size_t size;                        // taille du bloc en nombre d'octet
-    __uint8_t body[SIZE_BLK_SMALL];     // corps de la mémoire du bloc
+    __uint8_t body[];     // corps de la mémoire du bloc
 } block_t;
 
-block_t small_tab[MAX_SMALL];   // tableau de bloc (char small_tab[MAX_SMALL * 128] est une autre otpion que avec la structure)
+block_t* small_tab;   // tableau de bloc (char small_tab[MAX_SMALL * 128] est une autre otpion que avec la structure)
 size_t small_free;            // pointeur vers le premier bloc libre
 size_t big_free;
 size_t init_mem = 1;
