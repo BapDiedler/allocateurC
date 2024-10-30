@@ -346,7 +346,7 @@ void free_test(void)
 
     //print_small_memory();
 
-    ptr_head(tab)->head % 2 == 0 && head() == ptr_head(tab) ? VALID : ERROR;
+    ptr_head(tab)->head % 2 == 0? VALID : ERROR;
 
     char* error_tab1 = (char*)my_alloc(200);
     (size_t)ptr_head(error_tab1)->head %2 == 1 ? VALID : ERROR;

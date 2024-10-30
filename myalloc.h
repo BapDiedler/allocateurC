@@ -10,74 +10,62 @@
 #define SIZE_BLK_SMALL (128 - 2*sizeof(size_t))         // size of one block of small_tab
 #define SIZE_FIRST_BLK_LARGE 1024                       // size of the first large block
 
+typedef struct block_s block_t;
 typedef struct large_block_s large_block_t;
 struct large_block_s // struct of block (header + size + body)
 {
-    size_t head;                        // pointeur vers le prochain bloc libre
-    size_t size;                        // taille du bloc en nombre d'octet
-    __uint8_t body[];     // corps de la mémoire du bloc
+    size_t head;                        // pointer to next free block
+    size_t size;                        // body's block size
+    __uint8_t body[];                   // body's block
 };
-typedef struct block_s // structure d'un bloc (entête + corps)
+
+struct block_s // struct of block (header + size + body)
 {
-    size_t head;                        // pointeur vers le prochain bloc libre
-    size_t size;                        // taille du bloc en nombre d'octet
-    __uint8_t body[];     // corps de la mémoire du bloc
-} block_t;
+    size_t head;                        // pointer to next free block
+    size_t size;                        // body's block size
+    __uint8_t body[SIZE_BLK_SMALL];     // body's block
+};
 
-block_t* small_tab;   // tableau de bloc (char small_tab[MAX_SMALL * 128] est une autre otpion que avec la structure)
-size_t small_free;            // pointeur vers le premier bloc libre
-size_t big_free;
-size_t init_mem = 1;
-
-
+/**
+ * @brief change the location of the program break
+ */
 void* sbrk(__intptr_t increment);
 
 /**
- * @brief allocation de mémoire de taille size
- * @param size type size_t : la taille en mémoire
- * @return pointeur vers la case mémoire
+ * @brief       allocate size bytes and return a pointer to the allocated memory
+ * @param size  type size_t : nomber of bytes
+ * @return      pointer to empty memory area
  */
 void* my_alloc(size_t size);
 
 /**
- * @brief libération de la mémoire
- * @param ptr type void* : pointeur de la zone mémoire
+ * @brief       frees the memory space pointed to by ptr
+ * @param ptr   type void* : pointer to memory area
  */
 void my_free(void* ptr);
 
 /**
- * @brief allocation de mémoire déjà alloué de taille size
- * @param ptr type void* : pointeur donnant sa mémoire
- * @param size type size_t : la taille en mémoire
- * @return pointeur vers la case mémoire de ptr
+ * @brief       changes the size of the memory block pointed to by ptr to size bytes
+ * @param ptr   type void* : pointer to memory area
+ * @param size  type size_t : memory size
+ * @return      pointer to memory area with sames values than ptr
  */
 void* my_realloc(void* ptr, size_t size);
 
 /**
- * @brief affiche les blocs libres et occupés
+ * @brief print smalls frees and unfrees blocks
  */
 void print_small_memory(void);
 
 /**
- * @brief affiche les blocs libres et occupés
+ * @brief print larges frees blocks
  */
 void print_large_memory(void);
+
 /**
- * @brief initialisation de la mémoire
+ * @brief initialise memory
  */
 void init_memory(void);
-
-/**
- * @brief premier bloc vide
- * @return bloc libre
- */
-block_t* head(void);
-
-/**
- * @brief premier bloc large vide
- * @return bloc libre
- */
-large_block_t* head_big_free(void);
 
 /**
  * @brief passe au prochain bloc libre
