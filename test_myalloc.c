@@ -540,7 +540,7 @@ int main(void)
     // my_realloc_test_large();
     // realloc_test();
     // add_value_test();
-     time_test();
+    time_test();
     // out_of_tab_test();
     // random_test();
     return 0;

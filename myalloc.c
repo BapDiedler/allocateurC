@@ -113,7 +113,6 @@ void my_free(void* ptr)
     if(init_mem) init_memory();   // Initialise memory area
 
     size_t new_ptr = (size_t)ptr_head(ptr);
-
     // if ptr is at the end of memory area
     if(ptr_head(ptr)->size + new_ptr == (size_t)sbrk(0))
     {
@@ -121,13 +120,11 @@ void my_free(void* ptr)
         sbrk(-ptr_head(ptr)->size - 2*sizeof(size_t));
         return;
     }
-
     if(is_free(ptr))    // unfree block
     {
         printf("The pointer is in an empty block.\n");
         return;
     }
-
     // ptr is out of small_tab
     size_t new_small_tab = (size_t)small_tab;
     if((new_ptr >= new_small_tab && new_ptr <= (new_small_tab + sizeof(block_t) * MAX_SMALL)))
@@ -141,7 +138,6 @@ void my_free(void* ptr)
         }
         return;
     }
-
     // we don't have free large block
     if(big_free == 0)
     {
@@ -149,7 +145,6 @@ void my_free(void* ptr)
         big_free = (size_t)ptr_head(ptr);
         return;
     }
-
     // defragmentation of memory area
     block_t* large_ptr = (block_t*)big_free;
     block_t* prev_large_ptr = NULL;
@@ -171,12 +166,10 @@ void my_free(void* ptr)
                 big_free = (size_t)ptr_head(ptr);
             return;
         }
-
         // next block
         prev_large_ptr = large_ptr;	
         large_ptr = (block_t*)large_ptr->head;
     }
-
     // no defragmentation with ptr
     ptr_head(ptr)->head = (size_t)big_free;
     big_free = (size_t)ptr_head(ptr);
