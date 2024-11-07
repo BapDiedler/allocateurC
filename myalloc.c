@@ -118,61 +118,59 @@ void my_free(void* ptr)
     {
         ptr_head(ptr)->head = 0;
         sbrk(-ptr_head(ptr)->size - 2*sizeof(size_t));
-        return;
-    }
-    if(is_free(ptr))    // unfree block
-    {
+    }else if(is_free(ptr))    // unfree block
         printf("The pointer is in an empty block.\n");
-        return;
-    }
-    // ptr is out of small_tab
-    size_t new_small_tab = (size_t)small_tab;
-    if((new_ptr >= new_small_tab && new_ptr <= (new_small_tab + sizeof(block_t) * MAX_SMALL)))
+    else
     {
-        if((new_ptr - new_small_tab) % sizeof(block_t) != 2*sizeof(size_t)) // begin of small block
-            printf("The pointer isn't at the begining of small block.\n");
-        else
-        {   // ptr could be free
-            ptr_head(ptr)->head = (size_t)small_free;
-            small_free = (size_t)ptr_head(ptr);
-        }
-        return;
-    }
-    // we don't have free large block
-    if(big_free == 0)
-    {
-        ptr_head(ptr)->head = 0;
-        big_free = (size_t)ptr_head(ptr);
-        return;
-    }
-    // defragmentation of memory area
-    block_t* large_ptr = (block_t*)big_free;
-    block_t* prev_large_ptr = NULL;
-    while(large_ptr != NULL)    // while we're not at the end of list
-    {
-        if(((__uint8_t*)large_ptr + large_ptr->size + 2*sizeof(size_t)) == (__uint8_t*)ptr_head(ptr))   // before ptr
+        // ptr is out of small_tab
+        size_t new_small_tab = (size_t)small_tab;
+        if((new_ptr >= new_small_tab && new_ptr <= (new_small_tab + sizeof(block_t) * MAX_SMALL)))
         {
-            large_ptr->size += ptr_head(ptr)->size + 2*sizeof(size_t);
-            ptr_head(ptr)->head = 0;
-            return;
-        }
-        if(((__uint8_t*)ptr_head(ptr) + ptr_head(ptr)->size + 2*sizeof(size_t)) == (__uint8_t*)large_ptr)  // after ptr
-        {
-            ptr_head(ptr)->size += large_ptr->size + 2*sizeof(size_t);
-            ptr_head(ptr)->head = large_ptr->head;
-            if(prev_large_ptr != NULL)
-                prev_large_ptr->head = (size_t)ptr_head(ptr);
+            if((new_ptr - new_small_tab) % sizeof(block_t) != 0) // begin of small block
+                printf("The pointer isn't at the begining of small block.\n");
             else
-                big_free = (size_t)ptr_head(ptr);
+            {   // ptr could be free
+                ptr_head(ptr)->head = (size_t)small_free;
+                small_free = (size_t)ptr_head(ptr);
+            }
             return;
         }
-        // next block
-        prev_large_ptr = large_ptr;	
-        large_ptr = (block_t*)large_ptr->head;
+        // we don't have free large block
+        if(big_free == 0)
+        {
+            ptr_head(ptr)->head = 0;
+            big_free = (size_t)ptr_head(ptr);
+            return;
+        }
+        // defragmentation of memory area
+        block_t* large_ptr = (block_t*)big_free;
+        block_t* prev_large_ptr = NULL;
+        while(large_ptr != NULL)    // while we're not at the end of list
+        {
+            if(((__uint8_t*)large_ptr + large_ptr->size + 2*sizeof(size_t)) == (__uint8_t*)ptr_head(ptr))   // before ptr
+            {
+                large_ptr->size += ptr_head(ptr)->size + 2*sizeof(size_t);
+                ptr_head(ptr)->head = 0;
+                return;
+            }
+            if(((__uint8_t*)ptr_head(ptr) + ptr_head(ptr)->size + 2*sizeof(size_t)) == (__uint8_t*)large_ptr)  // after ptr
+            {
+                ptr_head(ptr)->size += large_ptr->size + 2*sizeof(size_t);
+                ptr_head(ptr)->head = large_ptr->head;
+                if(prev_large_ptr != NULL)
+                    prev_large_ptr->head = (size_t)ptr_head(ptr);
+                else
+                    big_free = (size_t)ptr_head(ptr);
+                return;
+            }
+            // next block
+            prev_large_ptr = large_ptr;	
+            large_ptr = (block_t*)large_ptr->head;
+        }
+        // no defragmentation with ptr
+        ptr_head(ptr)->head = (size_t)big_free;
+        big_free = (size_t)ptr_head(ptr);
     }
-    // no defragmentation with ptr
-    ptr_head(ptr)->head = (size_t)big_free;
-    big_free = (size_t)ptr_head(ptr);
 }
 
 /**
@@ -249,7 +247,7 @@ void print_large_memory(void)
 /**
  * @brief       test pour savoir si un bloc est libre
  * @param ptr   void* : pointeur à tester
- * @return      0 si libre
+ * @return      0 si libre autre sinon
  */
 int is_free(void* ptr)
 {
@@ -257,9 +255,9 @@ int is_free(void* ptr)
 }
 
 /**
- * @brief accès au pointeur vers la tête d'un bloc
- * @param ptr : void* poiteur du tableau d'un bloc
- * @return block_t* pointeur de la tête du bloc
+ * @brief       accès au pointeur vers la tête d'un bloc
+ * @param ptr   void* : poiteur du tableau d'un bloc
+ * @return      block_t* pointeur de la tête du bloc
  */
 block_t* ptr_head(void* ptr)
 {

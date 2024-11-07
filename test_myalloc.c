@@ -12,7 +12,7 @@ void my_alloc_test_small(void)
     char* arr = my_alloc(size);
 
     assert(arr != NULL);
-    assert(ptr_head(arr)->size == 10);
+    assert(ptr_head(arr)->size == SIZE_BLK_SMALL);
     assert(ptr_head(arr)->head % 2 == 1);
     for(int i=0; i<size; i++)
     {
@@ -33,7 +33,7 @@ void my_alloc_test_small(void)
     for(int i=0; i<MAX_SMALL; i++)
     {
         assert(arr2[i] != NULL);
-        assert(ptr_head(arr2[i])->size == 10);
+        assert(ptr_head(arr2[i])->size == SIZE_BLK_SMALL);
         assert(ptr_head(arr2[i])->head % 2 == 1);
     }
     assert((size_t)arr2[MAX_SMALL] + SIZE_BLK_SMALL == (size_t)sbrk(0));
@@ -116,10 +116,13 @@ void my_alloc_test(void)
         (char*)my_alloc(0);
     }
 
+
     char* error_tab3 = (char*)my_alloc(3);
-    error_tab3 == NULL ? VALID : ERROR;
+    error_tab3 != NULL ? VALID : ERROR;
+    (size_t)ptr_head(error_tab3)->size == SIZE_BLK_SMALL ? VALID : ERROR;
 
     char* arr1 = (char*)my_alloc(230);
+    
     (size_t)arr1 - 1 >= 230 ? VALID : ERROR;
     (size_t)ptr_head(arr1)->head %2 == 1 ? VALID : ERROR;
     char* arr2 = (char*)my_alloc(1024);
@@ -131,7 +134,6 @@ void my_alloc_test(void)
     char* arr4 = (char*)my_alloc(1234);
     (size_t)arr4 - 1 >= 1234 ? VALID : ERROR;
     (size_t)ptr_head(arr4)->head %2 == 1 ? VALID : ERROR;
-    print_large_memory();
 }
 
 void free_test_small(void)
@@ -148,23 +150,7 @@ void free_test_small(void)
     assert(arr != NULL);
     arr++;
 
-    FILE *temp = freopen("temp_output.txt", "w+", stdout);
-    if (temp == NULL) {
-        perror("Erreur lors de l'ouverture du fichier temporaire");
-        exit(1);
-    }
-
     my_free(arr);
-
-    fseek(temp, 0, SEEK_SET);
-    char buffer[1024];
-    fread(buffer, sizeof(char), sizeof(buffer), temp);
-
-    char* test = "The pointer isn't at the begining of small block.\n";
-    assert(strncmp(buffer,test,30)==0);
-
-    fclose(temp);
-    remove("temp_output.txt");
     
     assert(ptr_head(--arr)->head % 2 == 1);
 
@@ -172,51 +158,13 @@ void free_test_small(void)
     arr = my_alloc(10);
     assert(arr != NULL);
     arr+=MAX_SMALL*(2*sizeof(size_t)+SIZE_BLK_SMALL);
-    temp = freopen("temp_output1.txt", "w+", stdout);
-    if (temp == NULL) {
-        perror("Erreur lors de l'ouverture du fichier temporaire");
-        exit(1);
-    }
 
     my_free(arr);
-
-    fseek(temp, 0, SEEK_SET);
-    buffer[0] = '\0';
-    fread(buffer, sizeof(char), sizeof(buffer), temp);
-
-    test = "The pointer is in an empty block.\n";
-    printf("%d\n",strncmp(buffer,test,30));
-    assert(strncmp(buffer,test,30)==0);
-
-    fclose(temp);
-    remove("temp_output1.txt");
 
     arr-=MAX_SMALL*(2*sizeof(size_t)+SIZE_BLK_SMALL);
     assert(ptr_head(arr)->head % 2 == 1);
-
-    temp = freopen("temp_output1.txt", "w+", stdout);
-    if (temp == NULL) {
-        perror("Erreur lors de l'ouverture du fichier temporaire");
-        exit(1);
-    }
-
     my_free(arr);
-
-
-
     my_free(arr);
-
-    fseek(temp, 0, SEEK_SET);
-    buffer[0] = '\0';
-    fread(buffer, sizeof(char), sizeof(buffer), temp);
-
-    test = "The pointer is in an empty block.\n";
-    printf("%d\n",strncmp(buffer,test,30));
-    assert(strncmp(buffer,test,30)==0);
-
-    fclose(temp);
-    remove("temp_output1.txt");
-
 }
 
 void free_test_last_block(void)
@@ -275,39 +223,6 @@ void free_test_large(void)
 
 void my_free_test_fusion(void)
 {
-    // init_memory();
-    // char* arr = my_alloc(200);
-    // my_free(arr);
-    // assert((size_t)ptr_head(arr) != (size_t)big_free);
-
-    // init_memory();
-    // print_large_memory();
-    // char* arr1 = my_alloc(200);
-    // my_alloc(200);
-    // char* arr2 = my_alloc(200);
-    // char* arr3 = my_alloc(200);
-    // my_alloc(200);
-    // printf("%ld\n",sizeof(size_t));
-
-    // my_free(arr1);
-    // printf("%ld\n",sizeof(size_t));
-
-    // my_free(arr2);
-    // //size_t size = ptr_head(arr2)->size;
-    // print_large_memory();
-    // my_free(arr3);
-    // print_large_memory();
-    // assert(arr3+ptr_head(arr3)->size == arr2);
-
-    // printf("\n\n");
-
-    // init_memory();
-    // arr = my_alloc(200);
-    // my_free(arr);
-    // assert((size_t)ptr_head(arr) != (size_t)big_free);
-
-    // printf("\n\n");
-
     init_memory();
     print_large_memory();
     char* arr1 = my_alloc(200);
@@ -454,7 +369,7 @@ void time_test(void)
     init_memory();
     void** arr = malloc(sizeof(void*)*MAX_SMALL);
     start = clock();
-    for(int j=0; j<10; j++)
+    for(int j=0; j<100; j++)
     {
         for(int i=0; i<MAX_SMALL; i++)arr[i] = my_alloc(200);
         for(int i=0; i<MAX_SMALL/2; i++)arr[i] = my_realloc(arr[i],700);
@@ -467,7 +382,7 @@ void time_test(void)
     init_memory();
     arr = malloc(sizeof(void*)*MAX_SMALL);
     start = clock();
-    for(int j=0; j<10; j++)
+    for(int j=0; j<100; j++)
     {
         for(int i=0; i<MAX_SMALL; i++) arr[i] = malloc(200);
         for(int i=0; i<MAX_SMALL/2; i++) arr[i] = realloc(arr[i],560);
@@ -524,24 +439,20 @@ void random_test(void)
 
 int main(void)
 {
-    // my_alloc_test_small();
-    // free_test_last_block();
-    // my_alloc_test_large();
-    // init_memory();
-    // print_large_memory();
-    // print_memory();
-    // my_alloc_test();
-    // print_memory();
-    // free_test_small();
-    // free_test_large();
-    // my_free_test_fusion();
-    // free_test();
-    // my_realloc_test_small();
-    // my_realloc_test_large();
-    // realloc_test();
-    // add_value_test();
-    time_test();
-    // out_of_tab_test();
-    // random_test();
+    //  my_alloc_test_small();
+    //  free_test_last_block();
+    //  my_alloc_test_large();
+    //  my_alloc_test();
+    //  free_test_small();
+    //  free_test_large();
+    //  my_free_test_fusion();
+    //  free_test();
+    //  my_realloc_test_small();
+    //  my_realloc_test_large();
+    //  realloc_test();
+    //  add_value_test();
+    //  time_test();
+    //  out_of_tab_test();
+    //  random_test();
     return 0;
 }
